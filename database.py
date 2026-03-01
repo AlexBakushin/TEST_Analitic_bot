@@ -4,7 +4,6 @@ from datetime import datetime, timezone
 import asyncpg
 from dotenv import load_dotenv
 
-
 load_dotenv()
 
 DB_PATH = "analytics.db"
@@ -12,6 +11,7 @@ POSTGRES_URI = os.getenv("POSTGRES_URI", "postgresql://admin:postgres@localhost:
 
 
 async def init_db():
+    """Инициальзация БД"""
     conn = await asyncpg.connect(POSTGRES_URI)
     await conn.execute("""
         CREATE TABLE IF NOT EXISTS videos (
@@ -47,6 +47,7 @@ async def init_db():
 
 
 def parse_datetime(dt_str):
+    """Форматирование дат"""
     if dt_str is None:
         return None
     dt = datetime.fromisoformat(dt_str.replace("Z", "+00:00"))
@@ -54,6 +55,7 @@ def parse_datetime(dt_str):
 
 
 async def load_json_to_db(json_file):
+    """Импорт json в БД"""
     conn = await asyncpg.connect(POSTGRES_URI)
 
     with open(json_file, encoding="utf-8") as f:
@@ -69,16 +71,16 @@ async def load_json_to_db(json_file):
             VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
             ON CONFLICT (id) DO NOTHING;
         """,
-            vid,
-            video["creator_id"],
-            parse_datetime(video["video_created_at"]),
-            video["views_count"],
-            video["likes_count"],
-            video["comments_count"],
-            video["reports_count"],
-            parse_datetime(video["created_at"]),
-            parse_datetime(video["updated_at"])
-        )
+           vid,
+           video["creator_id"],
+           parse_datetime(video["video_created_at"]),
+           video["views_count"],
+           video["likes_count"],
+           video["comments_count"],
+           video["reports_count"],
+           parse_datetime(video["created_at"]),
+           parse_datetime(video["updated_at"])
+           )
 
         for snap in video["snapshots"]:
             await conn.execute("""
@@ -90,22 +92,24 @@ async def load_json_to_db(json_file):
                 VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
                 ON CONFLICT (id) DO NOTHING;
             """,
-                snap["id"],
-                vid,
-                snap["views_count"],
-                snap["likes_count"],
-                snap["comments_count"],
-                snap["reports_count"],
-                snap["delta_views_count"],
-                snap["delta_likes_count"],
-                snap["delta_comments_count"],
-                snap["delta_reports_count"],
-                parse_datetime(snap["created_at"]),
-                parse_datetime(snap["updated_at"])
-            )
+               snap["id"],
+               vid,
+               snap["views_count"],
+               snap["likes_count"],
+               snap["comments_count"],
+               snap["reports_count"],
+               snap["delta_views_count"],
+               snap["delta_likes_count"],
+               snap["delta_comments_count"],
+               snap["delta_reports_count"],
+               parse_datetime(snap["created_at"]),
+               parse_datetime(snap["updated_at"])
+               )
     await conn.close()
 
+
 def validate_sql(sql: str) -> bool:
+    """Валидация sql ответа от ИИ"""
     sql_lower = sql.strip().lower()
     if not sql_lower.startswith("select"):
         return False
@@ -114,6 +118,7 @@ def validate_sql(sql: str) -> bool:
 
 
 async def execute_sql_and_get_number(sql: str):
+    """Применение sql от ИИ в БД"""
     conn = await asyncpg.connect(POSTGRES_URI)
     try:
         row = await conn.fetchrow(sql)

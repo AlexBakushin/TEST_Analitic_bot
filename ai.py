@@ -8,6 +8,7 @@ AI_TOKEN = os.getenv("AI_TOKEN")
 
 
 async def make_openrouter_request(user_text):
+    """Функция с запросом к ИИ и промптом"""
     url = "https://openrouter.ai/api/v1/chat/completions"
     headers = {
       "Authorization": f"Bearer {AI_TOKEN}",

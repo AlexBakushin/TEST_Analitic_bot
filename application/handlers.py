@@ -8,6 +8,7 @@ router = Router()
 
 @router.message()
 async def echo(message: Message):
+    """Это функция для ответа на любое сообщение от юзера"""
     full_response = await make_openrouter_request(message)
     try:
         sql = full_response["choices"][0]["message"]["content"]
